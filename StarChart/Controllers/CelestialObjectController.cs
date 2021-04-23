@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StarChart.Data;
+using StarChart.Models;
 
 namespace StarChart.Controllers
 {
@@ -51,6 +53,51 @@ namespace StarChart.Controllers
             }
 
             return Ok(objects);
+        }
+
+        [HttpPost]
+        public IActionResult Create([FromBody] CelestialObject celestialObject)
+        {
+            _context.CelestialObjects.Add(celestialObject);
+            _context.SaveChanges();
+
+            return CreatedAtRoute("GetById", new { celestialObject.Id }, celestialObject);
+        }
+
+        [HttpPut("{id}")]
+        public IActionResult Update(int id, CelestialObject celestialObject)
+        {
+            var co = _context.CelestialObjects.FirstOrDefault(c => c.Id == id);
+            if (co == null) return NotFound();
+            co.Name = celestialObject.Name;
+            co.OrbitalPeriod = celestialObject.OrbitalPeriod;
+            co.OrbitedObjectId = celestialObject.OrbitedObjectId;
+            _context.CelestialObjects.Update(co);
+            _context.SaveChanges();
+            return NoContent();
+        }
+
+        [HttpPatch("{id}/{name}")]
+        public IActionResult RenameObject(int id, string name)
+        {
+            var co = _context.CelestialObjects.FirstOrDefault(c => c.Id == id);
+            if (co == null) return NotFound();
+            co.Name = name;
+
+            _context.CelestialObjects.Update(co);
+            _context.SaveChanges();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            var objects = _context.CelestialObjects.Where(c => c.Id == id || c.OrbitedObjectId == id).ToList();
+            if (!objects.Any())
+                return NotFound();
+            _context.CelestialObjects.RemoveRange(objects);
+            _context.SaveChanges();
+            return NoContent();
         }
     }
 }
